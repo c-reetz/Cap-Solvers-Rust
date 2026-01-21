@@ -9,6 +9,10 @@ use serde::{Deserialize, Serialize};
 const ANTICAPTCHA_API_URL: &str = "https://api.anti-captcha.com";
 
 /// Anticaptcha client
+///
+/// Note: Anticaptcha uses integer task IDs (i64) internally, but the CaptchaSolver trait
+/// uses String for task IDs to maintain consistency across all providers. The implementation
+/// handles conversion between these types transparently.
 #[derive(Debug, Clone)]
 pub struct Anticaptcha {
     api_key: String,
@@ -333,9 +337,10 @@ impl CaptchaSolver for Anticaptcha {
     }
 
     async fn get_task_result(&self, task_id: &str) -> Result<TaskResult> {
+        // Anticaptcha uses integer task IDs, so we need to parse the string
         let task_id_int = task_id
             .parse::<i64>()
-            .map_err(|_| Error::Api("Invalid task ID format".to_string()))?;
+            .map_err(|e| Error::Api(format!("Invalid task ID format: {}", e)))?;
 
         let request = GetTaskResultRequest {
             client_key: self.api_key.clone(),
@@ -404,8 +409,12 @@ impl CaptchaSolver for Anticaptcha {
             ));
         }
 
+        let balance = response
+            .balance
+            .ok_or_else(|| Error::Api("No balance returned in response".to_string()))?;
+
         Ok(Balance {
-            balance: response.balance.unwrap_or(0.0),
+            balance,
             currency: Some("USD".to_string()),
         })
     }
