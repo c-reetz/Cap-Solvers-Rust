@@ -181,8 +181,9 @@ impl CaptchaSolver for TwoCaptcha {
 
         if response.status != 1 {
             // Check if still processing
+            // Note: 2Captcha API returns "CAPCHA_NOT_READY" (with their typo)
             if let Some(error) = &response.error_text {
-                if error.contains("CAPCHA_NOT_READY") {
+                if error.contains("CAPCHA_NOT_READY") || error.contains("CAPTCHA_NOT_READY") {
                     return Ok(TaskResult {
                         task_id: task_id.to_string(),
                         status: TaskStatus::Processing,
