@@ -13,7 +13,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get balance
     println!("Fetching balance...");
     let balance = solver.get_balance().await?;
-    println!("Balance: ${:.2} {}", balance.balance, balance.currency.unwrap_or_default());
+    println!(
+        "Balance: ${:.2} {}",
+        balance.balance,
+        balance.currency.unwrap_or_default()
+    );
 
     // Create a ReCaptcha V2 task
     println!("\nCreating ReCaptcha V2 task...");
@@ -29,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Poll for result (timeout: 180 seconds, poll interval: 5 seconds)
     println!("\nPolling for result...");
     let result = solver.poll_task_result(&task_id, 180, 5).await?;
-    
+
     println!("\nTask result:");
     println!("Status: {:?}", result.status);
     if let Some(solution) = result.solution {

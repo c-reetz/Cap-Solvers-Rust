@@ -132,7 +132,7 @@ pub trait CaptchaSolver: Send + Sync {
         let start = std::time::Instant::now();
         loop {
             let result = self.get_task_result(task_id).await?;
-            
+
             match result.status {
                 TaskStatus::Ready => return Ok(result),
                 TaskStatus::Failed => return Ok(result),

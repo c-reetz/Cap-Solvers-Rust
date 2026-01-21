@@ -162,7 +162,7 @@ impl CaptchaSolver for CapSolver {
 
         let response = self
             .client
-            .post(&format!("{}/createTask", CAPSOLVER_API_URL))
+            .post(format!("{}/createTask", CAPSOLVER_API_URL))
             .json(&request)
             .send()
             .await?
@@ -190,7 +190,7 @@ impl CaptchaSolver for CapSolver {
 
         let response = self
             .client
-            .post(&format!("{}/getTaskResult", CAPSOLVER_API_URL))
+            .post(format!("{}/getTaskResult", CAPSOLVER_API_URL))
             .json(&request)
             .send()
             .await?
@@ -212,12 +212,8 @@ impl CaptchaSolver for CapSolver {
             _ => TaskStatus::Processing,
         };
 
-        let solution = if let Some(sol) = response.solution {
-            if let serde_json::Value::Object(map) = sol {
-                Some(map.into_iter().collect())
-            } else {
-                None
-            }
+        let solution = if let Some(serde_json::Value::Object(map)) = response.solution {
+            Some(map.into_iter().collect())
         } else {
             None
         };
@@ -238,7 +234,7 @@ impl CaptchaSolver for CapSolver {
 
         let response = self
             .client
-            .post(&format!("{}/getBalance", CAPSOLVER_API_URL))
+            .post(format!("{}/getBalance", CAPSOLVER_API_URL))
             .json(&request)
             .send()
             .await?
@@ -273,7 +269,7 @@ mod tests {
     #[test]
     fn test_task_to_json() {
         let solver = CapSolver::new("test_key");
-        
+
         let task = TaskType::ImageToText {
             body: "base64data".to_string(),
         };

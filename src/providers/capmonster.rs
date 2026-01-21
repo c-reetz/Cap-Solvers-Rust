@@ -163,7 +163,7 @@ impl CaptchaSolver for CapMonster {
 
         let response = self
             .client
-            .post(&format!("{}/createTask", CAPMONSTER_API_URL))
+            .post(format!("{}/createTask", CAPMONSTER_API_URL))
             .json(&request)
             .send()
             .await?
@@ -191,7 +191,7 @@ impl CaptchaSolver for CapMonster {
 
         let response = self
             .client
-            .post(&format!("{}/getTaskResult", CAPMONSTER_API_URL))
+            .post(format!("{}/getTaskResult", CAPMONSTER_API_URL))
             .json(&request)
             .send()
             .await?
@@ -213,19 +213,13 @@ impl CaptchaSolver for CapMonster {
             _ => TaskStatus::Processing,
         };
 
-        let solution = if let Some(sol) = response.solution {
-            if let serde_json::Value::Object(map) = sol {
-                Some(map.into_iter().collect())
-            } else {
-                None
-            }
+        let solution = if let Some(serde_json::Value::Object(map)) = response.solution {
+            Some(map.into_iter().collect())
         } else {
             None
         };
 
-        let cost = response
-            .cost
-            .and_then(|c| c.parse::<f64>().ok());
+        let cost = response.cost.and_then(|c| c.parse::<f64>().ok());
 
         Ok(TaskResult {
             task_id: task_id.to_string(),
@@ -243,7 +237,7 @@ impl CaptchaSolver for CapMonster {
 
         let response = self
             .client
-            .post(&format!("{}/getBalance", CAPMONSTER_API_URL))
+            .post(format!("{}/getBalance", CAPMONSTER_API_URL))
             .json(&request)
             .send()
             .await?
@@ -278,7 +272,7 @@ mod tests {
     #[test]
     fn test_task_to_json() {
         let solver = CapMonster::new("test_key");
-        
+
         let task = TaskType::ReCaptchaV2 {
             website_url: "https://example.com".to_string(),
             website_key: "key123".to_string(),

@@ -5,15 +5,19 @@ use cap_solvers::{CapSolver, CaptchaSolver, TaskType};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get API key from environment variable
-    let api_key = std::env::var("CAPSOLVER_API_KEY")
-        .expect("CAPSOLVER_API_KEY environment variable not set");
+    let api_key =
+        std::env::var("CAPSOLVER_API_KEY").expect("CAPSOLVER_API_KEY environment variable not set");
 
     let solver = CapSolver::new(api_key);
 
     // Get balance
     println!("Fetching balance...");
     let balance = solver.get_balance().await?;
-    println!("Balance: ${:.2} {}", balance.balance, balance.currency.unwrap_or_default());
+    println!(
+        "Balance: ${:.2} {}",
+        balance.balance,
+        balance.currency.unwrap_or_default()
+    );
 
     // Create an image-to-text task
     println!("\nCreating task...");
@@ -27,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Poll for result (timeout: 120 seconds, poll interval: 5 seconds)
     println!("\nPolling for result...");
     let result = solver.poll_task_result(&task_id, 120, 5).await?;
-    
+
     println!("\nTask result:");
     println!("Status: {:?}", result.status);
     if let Some(solution) = result.solution {

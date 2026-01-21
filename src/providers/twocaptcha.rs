@@ -74,7 +74,10 @@ impl TwoCaptcha {
                 params.insert("googlekey".to_string(), website_key);
                 params.insert("pageurl".to_string(), website_url);
                 if let Some(invisible) = is_invisible {
-                    params.insert("invisible".to_string(), if invisible { "1" } else { "0" }.to_string());
+                    params.insert(
+                        "invisible".to_string(),
+                        if invisible { "1" } else { "0" }.to_string(),
+                    );
                 }
                 ("userrecaptcha".to_string(), params)
             }
@@ -141,7 +144,7 @@ impl CaptchaSolver for TwoCaptcha {
 
         let response = self
             .client
-            .post(&format!("{}/in.php", TWOCAPTCHA_API_URL))
+            .post(format!("{}/in.php", TWOCAPTCHA_API_URL))
             .form(&request)
             .send()
             .await?
@@ -164,7 +167,7 @@ impl CaptchaSolver for TwoCaptcha {
     async fn get_task_result(&self, task_id: &str) -> Result<TaskResult> {
         let response = self
             .client
-            .get(&format!("{}/res.php", TWOCAPTCHA_API_URL))
+            .get(format!("{}/res.php", TWOCAPTCHA_API_URL))
             .query(&[
                 ("key", self.api_key.as_str()),
                 ("action", "get"),
@@ -189,7 +192,7 @@ impl CaptchaSolver for TwoCaptcha {
                     });
                 }
             }
-            
+
             return Err(Error::Api(
                 response
                     .error_text
@@ -214,7 +217,7 @@ impl CaptchaSolver for TwoCaptcha {
     async fn get_balance(&self) -> Result<Balance> {
         let response = self
             .client
-            .get(&format!("{}/res.php", TWOCAPTCHA_API_URL))
+            .get(format!("{}/res.php", TWOCAPTCHA_API_URL))
             .query(&[
                 ("key", self.api_key.as_str()),
                 ("action", "getbalance"),
@@ -258,7 +261,7 @@ mod tests {
     #[test]
     fn test_task_to_params() {
         let solver = TwoCaptcha::new("test_key");
-        
+
         let task = TaskType::HCaptcha {
             website_url: "https://example.com".to_string(),
             website_key: "key123".to_string(),

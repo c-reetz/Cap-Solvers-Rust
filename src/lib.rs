@@ -34,9 +34,9 @@
 //! ```
 
 pub mod error;
-pub mod types;
 pub mod providers;
+pub mod types;
 
 pub use error::{Error, Result};
-pub use types::{Balance, CaptchaSolver, TaskResult, TaskType, TaskStatus};
-pub use providers::{capsolver::CapSolver, capmonster::CapMonster, twocaptcha::TwoCaptcha};
+pub use providers::{capmonster::CapMonster, capsolver::CapSolver, twocaptcha::TwoCaptcha};
+pub use types::{Balance, CaptchaSolver, TaskResult, TaskStatus, TaskType};
