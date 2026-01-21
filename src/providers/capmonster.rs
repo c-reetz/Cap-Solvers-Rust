@@ -1,0 +1,291 @@
+//! CapMonster API implementation.
+
+use crate::error::{Error, Result};
+use crate::types::{Balance, CaptchaSolver, TaskResult, TaskStatus, TaskType};
+use async_trait::async_trait;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+
+const CAPMONSTER_API_URL: &str = "https://api.capmonster.cloud";
+
+/// CapMonster client
+#[derive(Debug, Clone)]
+pub struct CapMonster {
+    api_key: String,
+    client: Client,
+}
+
+#[derive(Serialize)]
+struct CreateTaskRequest {
+    #[serde(rename = "clientKey")]
+    client_key: String,
+    task: serde_json::Value,
+}
+
+#[derive(Deserialize)]
+struct CreateTaskResponse {
+    #[serde(rename = "errorId")]
+    error_id: i32,
+    #[serde(rename = "errorDescription")]
+    error_description: Option<String>,
+    #[serde(rename = "taskId")]
+    task_id: Option<String>,
+}
+
+#[derive(Serialize)]
+struct GetTaskResultRequest {
+    #[serde(rename = "clientKey")]
+    client_key: String,
+    #[serde(rename = "taskId")]
+    task_id: String,
+}
+
+#[derive(Deserialize)]
+struct GetTaskResultResponse {
+    #[serde(rename = "errorId")]
+    error_id: i32,
+    #[serde(rename = "errorDescription")]
+    error_description: Option<String>,
+    status: Option<String>,
+    solution: Option<serde_json::Value>,
+    cost: Option<String>,
+}
+
+#[derive(Serialize)]
+struct GetBalanceRequest {
+    #[serde(rename = "clientKey")]
+    client_key: String,
+}
+
+#[derive(Deserialize)]
+struct GetBalanceResponse {
+    #[serde(rename = "errorId")]
+    error_id: i32,
+    #[serde(rename = "errorDescription")]
+    error_description: Option<String>,
+    balance: Option<f64>,
+}
+
+impl CapMonster {
+    /// Create a new CapMonster client
+    ///
+    /// # Arguments
+    /// * `api_key` - Your CapMonster API key
+    pub fn new(api_key: impl Into<String>) -> Self {
+        Self {
+            api_key: api_key.into(),
+            client: Client::new(),
+        }
+    }
+
+    fn task_to_json(&self, task: TaskType) -> Result<serde_json::Value> {
+        let json = match task {
+            TaskType::ImageToText { body } => {
+                serde_json::json!({
+                    "type": "ImageToTextTask",
+                    "body": body,
+                })
+            }
+            TaskType::ReCaptchaV2 {
+                website_url,
+                website_key,
+                is_invisible,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "NoCaptchaTaskProxyless",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                });
+                if let Some(invisible) = is_invisible {
+                    json["isInvisible"] = serde_json::json!(invisible);
+                }
+                json
+            }
+            TaskType::ReCaptchaV3 {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "RecaptchaV3TaskProxyless",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "pageAction": page_action,
+                });
+                if let Some(score) = min_score {
+                    json["minScore"] = serde_json::json!(score);
+                }
+                json
+            }
+            TaskType::HCaptcha {
+                website_url,
+                website_key,
+            } => {
+                serde_json::json!({
+                    "type": "HCaptchaTaskProxyless",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                })
+            }
+            TaskType::FunCaptcha {
+                website_url,
+                website_public_key,
+            } => {
+                serde_json::json!({
+                    "type": "FunCaptchaTaskProxyless",
+                    "websiteURL": website_url,
+                    "websitePublicKey": website_public_key,
+                })
+            }
+            TaskType::Custom { task_type, data } => {
+                let mut json = serde_json::json!({
+                    "type": task_type,
+                });
+                for (key, value) in data {
+                    json[key] = value;
+                }
+                json
+            }
+        };
+        Ok(json)
+    }
+}
+
+#[async_trait]
+impl CaptchaSolver for CapMonster {
+    async fn create_task(&self, task: TaskType) -> Result<String> {
+        let task_json = self.task_to_json(task)?;
+        let request = CreateTaskRequest {
+            client_key: self.api_key.clone(),
+            task: task_json,
+        };
+
+        let response = self
+            .client
+            .post(&format!("{}/createTask", CAPMONSTER_API_URL))
+            .json(&request)
+            .send()
+            .await?
+            .json::<CreateTaskResponse>()
+            .await?;
+
+        if response.error_id != 0 {
+            return Err(Error::Api(
+                response
+                    .error_description
+                    .unwrap_or_else(|| "Unknown error".to_string()),
+            ));
+        }
+
+        response
+            .task_id
+            .ok_or_else(|| Error::Api("No task ID returned".to_string()))
+    }
+
+    async fn get_task_result(&self, task_id: &str) -> Result<TaskResult> {
+        let request = GetTaskResultRequest {
+            client_key: self.api_key.clone(),
+            task_id: task_id.to_string(),
+        };
+
+        let response = self
+            .client
+            .post(&format!("{}/getTaskResult", CAPMONSTER_API_URL))
+            .json(&request)
+            .send()
+            .await?
+            .json::<GetTaskResultResponse>()
+            .await?;
+
+        if response.error_id != 0 {
+            return Err(Error::Api(
+                response
+                    .error_description
+                    .unwrap_or_else(|| "Unknown error".to_string()),
+            ));
+        }
+
+        let status = match response.status.as_deref() {
+            Some("processing") => TaskStatus::Processing,
+            Some("ready") => TaskStatus::Ready,
+            Some("failed") => TaskStatus::Failed,
+            _ => TaskStatus::Processing,
+        };
+
+        let solution = if let Some(sol) = response.solution {
+            if let serde_json::Value::Object(map) = sol {
+                Some(map.into_iter().collect())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let cost = response
+            .cost
+            .and_then(|c| c.parse::<f64>().ok());
+
+        Ok(TaskResult {
+            task_id: task_id.to_string(),
+            status,
+            solution,
+            error: response.error_description,
+            cost,
+        })
+    }
+
+    async fn get_balance(&self) -> Result<Balance> {
+        let request = GetBalanceRequest {
+            client_key: self.api_key.clone(),
+        };
+
+        let response = self
+            .client
+            .post(&format!("{}/getBalance", CAPMONSTER_API_URL))
+            .json(&request)
+            .send()
+            .await?
+            .json::<GetBalanceResponse>()
+            .await?;
+
+        if response.error_id != 0 {
+            return Err(Error::Api(
+                response
+                    .error_description
+                    .unwrap_or_else(|| "Unknown error".to_string()),
+            ));
+        }
+
+        Ok(Balance {
+            balance: response.balance.unwrap_or(0.0),
+            currency: Some("USD".to_string()),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_capmonster_new() {
+        let solver = CapMonster::new("test_key");
+        assert_eq!(solver.api_key, "test_key");
+    }
+
+    #[test]
+    fn test_task_to_json() {
+        let solver = CapMonster::new("test_key");
+        
+        let task = TaskType::ReCaptchaV2 {
+            website_url: "https://example.com".to_string(),
+            website_key: "key123".to_string(),
+            is_invisible: Some(false),
+        };
+        let json = solver.task_to_json(task).unwrap();
+        assert_eq!(json["type"], "NoCaptchaTaskProxyless");
+        assert_eq!(json["websiteURL"], "https://example.com");
+    }
+}
