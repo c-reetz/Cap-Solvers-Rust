@@ -5,6 +5,7 @@ A Rust library for interacting with captcha solving services.
 ## Features
 
 - ✅ Support for multiple captcha solving providers:
+  - Anticaptcha
   - CapSolver
   - CapMonster
   - 2Captcha
@@ -32,6 +33,32 @@ cap_solvers = "0.1.0"
 ```
 
 ## Usage
+
+### Anticaptcha Example
+
+```rust
+use cap_solvers::{Anticaptcha, CaptchaSolver, TaskType};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let solver = Anticaptcha::new("YOUR_API_KEY");
+    
+    // Get balance
+    let balance = solver.get_balance().await?;
+    println!("Balance: ${}", balance.balance);
+    
+    // Create a task
+    let task_id = solver.create_task(TaskType::ImageToText {
+        body: "base64_encoded_image".to_string(),
+    }).await?;
+    
+    // Poll for result (timeout: 120s, interval: 5s)
+    let result = solver.poll_task_result(&task_id, 120, 5).await?;
+    println!("Solution: {:?}", result.solution);
+    
+    Ok(())
+}
+```
 
 ### CapSolver Example
 
@@ -177,6 +204,9 @@ All providers implement the `CaptchaSolver` trait with these methods:
 Run the examples with:
 
 ```bash
+# Anticaptcha
+ANTICAPTCHA_API_KEY=your_key cargo run --example anticaptcha_example
+
 # CapSolver
 CAPSOLVER_API_KEY=your_key cargo run --example capsolver_example
 
