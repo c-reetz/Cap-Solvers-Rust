@@ -65,7 +65,7 @@ impl TwoCaptcha {
                 params.insert("body".to_string(), body);
                 ("base64".to_string(), params)
             }
-            TaskType::ReCaptchaV2 {
+            TaskType::ReCaptchaV2Proxyless {
                 website_url,
                 website_key,
                 is_invisible,
@@ -81,7 +81,35 @@ impl TwoCaptcha {
                 }
                 ("userrecaptcha".to_string(), params)
             }
-            TaskType::ReCaptchaV3 {
+            TaskType::ReCaptchaV2 {
+                website_url,
+                website_key,
+                is_invisible,
+                proxy,
+            } => {
+                let mut params = HashMap::new();
+                params.insert("googlekey".to_string(), website_key);
+                params.insert("pageurl".to_string(), website_url);
+                params.insert("proxytype".to_string(), proxy.proxy_type);
+                params.insert(
+                    "proxy".to_string(),
+                    format!("{}:{}", proxy.proxy_address, proxy.proxy_port),
+                );
+                if let Some(invisible) = is_invisible {
+                    params.insert(
+                        "invisible".to_string(),
+                        if invisible { "1" } else { "0" }.to_string(),
+                    );
+                }
+                if let Some(login) = proxy.proxy_login {
+                    params.insert("proxylogin".to_string(), login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    params.insert("proxypassword".to_string(), password);
+                }
+                ("userrecaptcha".to_string(), params)
+            }
+            TaskType::ReCaptchaV3Proxyless {
                 website_url,
                 website_key,
                 page_action,
@@ -97,7 +125,93 @@ impl TwoCaptcha {
                 params.insert("version".to_string(), "v3".to_string());
                 ("userrecaptcha".to_string(), params)
             }
-            TaskType::HCaptcha {
+            TaskType::ReCaptchaV3 {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                proxy,
+            } => {
+                let mut params = HashMap::new();
+                params.insert("googlekey".to_string(), website_key);
+                params.insert("pageurl".to_string(), website_url);
+                params.insert("action".to_string(), page_action);
+                params.insert("proxytype".to_string(), proxy.proxy_type);
+                params.insert(
+                    "proxy".to_string(),
+                    format!("{}:{}", proxy.proxy_address, proxy.proxy_port),
+                );
+                if let Some(score) = min_score {
+                    params.insert("min_score".to_string(), score.to_string());
+                }
+                params.insert("version".to_string(), "v3".to_string());
+                if let Some(login) = proxy.proxy_login {
+                    params.insert("proxylogin".to_string(), login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    params.insert("proxypassword".to_string(), password);
+                }
+                ("userrecaptcha".to_string(), params)
+            }
+            TaskType::ReCaptchaV3EnterpriseProxyless {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                enterprise_payload,
+            } => {
+                let mut params = HashMap::new();
+                params.insert("googlekey".to_string(), website_key);
+                params.insert("pageurl".to_string(), website_url);
+                params.insert("action".to_string(), page_action);
+                if let Some(score) = min_score {
+                    params.insert("min_score".to_string(), score.to_string());
+                }
+                params.insert("version".to_string(), "v3".to_string());
+                params.insert("enterprise".to_string(), "1".to_string());
+                if let Some(payload) = enterprise_payload {
+                    if let Ok(json_str) = serde_json::to_string(&payload) {
+                        params.insert("enterprise_payload".to_string(), json_str);
+                    }
+                }
+                ("userrecaptcha".to_string(), params)
+            }
+            TaskType::ReCaptchaV3Enterprise {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                enterprise_payload,
+                proxy,
+            } => {
+                let mut params = HashMap::new();
+                params.insert("googlekey".to_string(), website_key);
+                params.insert("pageurl".to_string(), website_url);
+                params.insert("action".to_string(), page_action);
+                params.insert("proxytype".to_string(), proxy.proxy_type);
+                params.insert(
+                    "proxy".to_string(),
+                    format!("{}:{}", proxy.proxy_address, proxy.proxy_port),
+                );
+                if let Some(score) = min_score {
+                    params.insert("min_score".to_string(), score.to_string());
+                }
+                params.insert("version".to_string(), "v3".to_string());
+                params.insert("enterprise".to_string(), "1".to_string());
+                if let Some(payload) = enterprise_payload {
+                    if let Ok(json_str) = serde_json::to_string(&payload) {
+                        params.insert("enterprise_payload".to_string(), json_str);
+                    }
+                }
+                if let Some(login) = proxy.proxy_login {
+                    params.insert("proxylogin".to_string(), login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    params.insert("proxypassword".to_string(), password);
+                }
+                ("userrecaptcha".to_string(), params)
+            }
+            TaskType::HCaptchaProxyless {
                 website_url,
                 website_key,
             } => {
@@ -106,13 +220,55 @@ impl TwoCaptcha {
                 params.insert("pageurl".to_string(), website_url);
                 ("hcaptcha".to_string(), params)
             }
-            TaskType::FunCaptcha {
+            TaskType::HCaptcha {
+                website_url,
+                website_key,
+                proxy,
+            } => {
+                let mut params = HashMap::new();
+                params.insert("sitekey".to_string(), website_key);
+                params.insert("pageurl".to_string(), website_url);
+                params.insert("proxytype".to_string(), proxy.proxy_type);
+                params.insert(
+                    "proxy".to_string(),
+                    format!("{}:{}", proxy.proxy_address, proxy.proxy_port),
+                );
+                if let Some(login) = proxy.proxy_login {
+                    params.insert("proxylogin".to_string(), login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    params.insert("proxypassword".to_string(), password);
+                }
+                ("hcaptcha".to_string(), params)
+            }
+            TaskType::FunCaptchaProxyless {
                 website_url,
                 website_public_key,
             } => {
                 let mut params = HashMap::new();
                 params.insert("publickey".to_string(), website_public_key);
                 params.insert("pageurl".to_string(), website_url);
+                ("funcaptcha".to_string(), params)
+            }
+            TaskType::FunCaptcha {
+                website_url,
+                website_public_key,
+                proxy,
+            } => {
+                let mut params = HashMap::new();
+                params.insert("publickey".to_string(), website_public_key);
+                params.insert("pageurl".to_string(), website_url);
+                params.insert("proxytype".to_string(), proxy.proxy_type);
+                params.insert(
+                    "proxy".to_string(),
+                    format!("{}:{}", proxy.proxy_address, proxy.proxy_port),
+                );
+                if let Some(login) = proxy.proxy_login {
+                    params.insert("proxylogin".to_string(), login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    params.insert("proxypassword".to_string(), password);
+                }
                 ("funcaptcha".to_string(), params)
             }
             TaskType::Custom { task_type, data } => {
@@ -263,7 +419,7 @@ mod tests {
     fn test_task_to_params() {
         let solver = TwoCaptcha::new("test_key");
 
-        let task = TaskType::HCaptcha {
+        let task = TaskType::HCaptchaProxyless {
             website_url: "https://example.com".to_string(),
             website_key: "key123".to_string(),
         };

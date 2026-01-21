@@ -19,9 +19,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         balance.currency.unwrap_or_default()
     );
 
-    // Create an hCaptcha task
-    println!("\nCreating hCaptcha task...");
-    let task = TaskType::HCaptcha {
+    // Create an hCaptcha task (Proxyless)
+    println!("\nCreating hCaptcha task (Proxyless)...");
+    let task = TaskType::HCaptchaProxyless {
         website_url: "https://accounts.hcaptcha.com/demo".to_string(),
         website_key: "a5f74b19-9e45-40e0-b45d-47ff91b7a6c2".to_string(),
     };

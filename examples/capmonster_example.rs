@@ -19,9 +19,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         balance.currency.unwrap_or_default()
     );
 
-    // Create a ReCaptcha V2 task
-    println!("\nCreating ReCaptcha V2 task...");
-    let task = TaskType::ReCaptchaV2 {
+    // Create a ReCaptcha V2 task (Proxyless)
+    println!("\nCreating ReCaptcha V2 task (Proxyless)...");
+    let task = TaskType::ReCaptchaV2Proxyless {
         website_url: "https://www.google.com/recaptcha/api2/demo".to_string(),
         website_key: "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-".to_string(),
         is_invisible: Some(false),

@@ -86,7 +86,7 @@ impl CapMonster {
                     "body": body,
                 })
             }
-            TaskType::ReCaptchaV2 {
+            TaskType::ReCaptchaV2Proxyless {
                 website_url,
                 website_key,
                 is_invisible,
@@ -101,7 +101,32 @@ impl CapMonster {
                 }
                 json
             }
-            TaskType::ReCaptchaV3 {
+            TaskType::ReCaptchaV2 {
+                website_url,
+                website_key,
+                is_invisible,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "NoCaptchaTask",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(invisible) = is_invisible {
+                    json["isInvisible"] = serde_json::json!(invisible);
+                }
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
+            }
+            TaskType::ReCaptchaV3Proxyless {
                 website_url,
                 website_key,
                 page_action,
@@ -118,7 +143,86 @@ impl CapMonster {
                 }
                 json
             }
-            TaskType::HCaptcha {
+            TaskType::ReCaptchaV3 {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "RecaptchaV3Task",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "pageAction": page_action,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(score) = min_score {
+                    json["minScore"] = serde_json::json!(score);
+                }
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
+            }
+            TaskType::ReCaptchaV3EnterpriseProxyless {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                enterprise_payload,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "RecaptchaV3EnterpriseTaskProxyless",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "pageAction": page_action,
+                });
+                if let Some(score) = min_score {
+                    json["minScore"] = serde_json::json!(score);
+                }
+                if let Some(payload) = enterprise_payload {
+                    json["enterprisePayload"] = serde_json::json!(payload);
+                }
+                json
+            }
+            TaskType::ReCaptchaV3Enterprise {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                enterprise_payload,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "RecaptchaV3EnterpriseTask",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "pageAction": page_action,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(score) = min_score {
+                    json["minScore"] = serde_json::json!(score);
+                }
+                if let Some(payload) = enterprise_payload {
+                    json["enterprisePayload"] = serde_json::json!(payload);
+                }
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
+            }
+            TaskType::HCaptchaProxyless {
                 website_url,
                 website_key,
             } => {
@@ -128,7 +232,28 @@ impl CapMonster {
                     "websiteKey": website_key,
                 })
             }
-            TaskType::FunCaptcha {
+            TaskType::HCaptcha {
+                website_url,
+                website_key,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "HCaptchaTask",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
+            }
+            TaskType::FunCaptchaProxyless {
                 website_url,
                 website_public_key,
             } => {
@@ -137,6 +262,27 @@ impl CapMonster {
                     "websiteURL": website_url,
                     "websitePublicKey": website_public_key,
                 })
+            }
+            TaskType::FunCaptcha {
+                website_url,
+                website_public_key,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "FunCaptchaTask",
+                    "websiteURL": website_url,
+                    "websitePublicKey": website_public_key,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
             }
             TaskType::Custom { task_type, data } => {
                 let mut json = serde_json::json!({
@@ -273,7 +419,7 @@ mod tests {
     fn test_task_to_json() {
         let solver = CapMonster::new("test_key");
 
-        let task = TaskType::ReCaptchaV2 {
+        let task = TaskType::ReCaptchaV2Proxyless {
             website_url: "https://example.com".to_string(),
             website_key: "key123".to_string(),
             is_invisible: Some(false),

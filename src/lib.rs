@@ -39,4 +39,4 @@ pub mod types;
 
 pub use error::{Error, Result};
 pub use providers::{capmonster::CapMonster, capsolver::CapSolver, twocaptcha::TwoCaptcha};
-pub use types::{Balance, CaptchaSolver, TaskResult, TaskStatus, TaskType};
+pub use types::{Balance, CaptchaSolver, ProxyConfig, TaskResult, TaskStatus, TaskType};

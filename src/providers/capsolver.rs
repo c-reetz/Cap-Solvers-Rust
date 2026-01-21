@@ -85,13 +85,13 @@ impl CapSolver {
                     "body": body,
                 })
             }
-            TaskType::ReCaptchaV2 {
+            TaskType::ReCaptchaV2Proxyless {
                 website_url,
                 website_key,
                 is_invisible,
             } => {
                 let mut json = serde_json::json!({
-                    "type": "ReCaptchaV2Task",
+                    "type": "ReCaptchaV2TaskProxyless",
                     "websiteURL": website_url,
                     "websiteKey": website_key,
                 });
@@ -100,14 +100,39 @@ impl CapSolver {
                 }
                 json
             }
-            TaskType::ReCaptchaV3 {
+            TaskType::ReCaptchaV2 {
+                website_url,
+                website_key,
+                is_invisible,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "ReCaptchaV2Task",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(invisible) = is_invisible {
+                    json["isInvisible"] = serde_json::json!(invisible);
+                }
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
+            }
+            TaskType::ReCaptchaV3Proxyless {
                 website_url,
                 website_key,
                 page_action,
                 min_score,
             } => {
                 let mut json = serde_json::json!({
-                    "type": "ReCaptchaV3Task",
+                    "type": "ReCaptchaV3TaskProxyless",
                     "websiteURL": website_url,
                     "websiteKey": website_key,
                     "pageAction": page_action,
@@ -117,25 +142,146 @@ impl CapSolver {
                 }
                 json
             }
-            TaskType::HCaptcha {
+            TaskType::ReCaptchaV3 {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "ReCaptchaV3Task",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "pageAction": page_action,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(score) = min_score {
+                    json["minScore"] = serde_json::json!(score);
+                }
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
+            }
+            TaskType::ReCaptchaV3EnterpriseProxyless {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                enterprise_payload,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "ReCaptchaV3EnterpriseTaskProxyless",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "pageAction": page_action,
+                });
+                if let Some(score) = min_score {
+                    json["minScore"] = serde_json::json!(score);
+                }
+                if let Some(payload) = enterprise_payload {
+                    json["enterprisePayload"] = serde_json::json!(payload);
+                }
+                json
+            }
+            TaskType::ReCaptchaV3Enterprise {
+                website_url,
+                website_key,
+                page_action,
+                min_score,
+                enterprise_payload,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
+                    "type": "ReCaptchaV3EnterpriseTask",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                    "pageAction": page_action,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(score) = min_score {
+                    json["minScore"] = serde_json::json!(score);
+                }
+                if let Some(payload) = enterprise_payload {
+                    json["enterprisePayload"] = serde_json::json!(payload);
+                }
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
+            }
+            TaskType::HCaptchaProxyless {
                 website_url,
                 website_key,
             } => {
                 serde_json::json!({
+                    "type": "HCaptchaTaskProxyless",
+                    "websiteURL": website_url,
+                    "websiteKey": website_key,
+                })
+            }
+            TaskType::HCaptcha {
+                website_url,
+                website_key,
+                proxy,
+            } => {
+                let mut json = serde_json::json!({
                     "type": "HCaptchaTask",
                     "websiteURL": website_url,
                     "websiteKey": website_key,
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
+            }
+            TaskType::FunCaptchaProxyless {
+                website_url,
+                website_public_key,
+            } => {
+                serde_json::json!({
+                    "type": "FunCaptchaTaskProxyless",
+                    "websiteURL": website_url,
+                    "websitePublicKey": website_public_key,
                 })
             }
             TaskType::FunCaptcha {
                 website_url,
                 website_public_key,
+                proxy,
             } => {
-                serde_json::json!({
+                let mut json = serde_json::json!({
                     "type": "FunCaptchaTask",
                     "websiteURL": website_url,
                     "websitePublicKey": website_public_key,
-                })
+                    "proxyType": proxy.proxy_type,
+                    "proxyAddress": proxy.proxy_address,
+                    "proxyPort": proxy.proxy_port,
+                });
+                if let Some(login) = proxy.proxy_login {
+                    json["proxyLogin"] = serde_json::json!(login);
+                }
+                if let Some(password) = proxy.proxy_password {
+                    json["proxyPassword"] = serde_json::json!(password);
+                }
+                json
             }
             TaskType::Custom { task_type, data } => {
                 let mut json = serde_json::json!({

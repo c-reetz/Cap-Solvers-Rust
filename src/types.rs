@@ -39,6 +39,23 @@ pub struct TaskResult {
     pub cost: Option<f64>,
 }
 
+/// Proxy configuration for captcha tasks
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProxyConfig {
+    /// Proxy type (e.g., "http", "https", "socks4", "socks5")
+    pub proxy_type: String,
+    /// Proxy address
+    pub proxy_address: String,
+    /// Proxy port
+    pub proxy_port: u16,
+    /// Proxy username (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy_login: Option<String>,
+    /// Proxy password (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub proxy_password: Option<String>,
+}
+
 /// Task types supported by captcha solvers
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -48,8 +65,8 @@ pub enum TaskType {
         /// Base64 encoded image
         body: String,
     },
-    /// ReCaptcha v2
-    ReCaptchaV2 {
+    /// ReCaptcha v2 (Proxyless)
+    ReCaptchaV2Proxyless {
         /// Website URL
         website_url: String,
         /// Website key
@@ -58,8 +75,20 @@ pub enum TaskType {
         #[serde(skip_serializing_if = "Option::is_none")]
         is_invisible: Option<bool>,
     },
-    /// ReCaptcha v3
-    ReCaptchaV3 {
+    /// ReCaptcha v2 (with Proxy)
+    ReCaptchaV2 {
+        /// Website URL
+        website_url: String,
+        /// Website key
+        website_key: String,
+        /// Is invisible
+        #[serde(skip_serializing_if = "Option::is_none")]
+        is_invisible: Option<bool>,
+        /// Proxy configuration
+        proxy: ProxyConfig,
+    },
+    /// ReCaptcha v3 (Proxyless)
+    ReCaptchaV3Proxyless {
         /// Website URL
         website_url: String,
         /// Website key
@@ -70,19 +99,83 @@ pub enum TaskType {
         #[serde(skip_serializing_if = "Option::is_none")]
         min_score: Option<f64>,
     },
-    /// hCaptcha
-    HCaptcha {
+    /// ReCaptcha v3 (with Proxy)
+    ReCaptchaV3 {
+        /// Website URL
+        website_url: String,
+        /// Website key
+        website_key: String,
+        /// Page action
+        page_action: String,
+        /// Minimum score (0.1 - 0.9)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        min_score: Option<f64>,
+        /// Proxy configuration
+        proxy: ProxyConfig,
+    },
+    /// ReCaptcha v3 Enterprise (Proxyless)
+    ReCaptchaV3EnterpriseProxyless {
+        /// Website URL
+        website_url: String,
+        /// Website key
+        website_key: String,
+        /// Page action
+        page_action: String,
+        /// Minimum score (0.1 - 0.9)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        min_score: Option<f64>,
+        /// Enterprise payload
+        #[serde(skip_serializing_if = "Option::is_none")]
+        enterprise_payload: Option<HashMap<String, serde_json::Value>>,
+    },
+    /// ReCaptcha v3 Enterprise (with Proxy)
+    ReCaptchaV3Enterprise {
+        /// Website URL
+        website_url: String,
+        /// Website key
+        website_key: String,
+        /// Page action
+        page_action: String,
+        /// Minimum score (0.1 - 0.9)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        min_score: Option<f64>,
+        /// Enterprise payload
+        #[serde(skip_serializing_if = "Option::is_none")]
+        enterprise_payload: Option<HashMap<String, serde_json::Value>>,
+        /// Proxy configuration
+        proxy: ProxyConfig,
+    },
+    /// hCaptcha (Proxyless)
+    HCaptchaProxyless {
         /// Website URL
         website_url: String,
         /// Website key
         website_key: String,
     },
-    /// FunCaptcha
+    /// hCaptcha (with Proxy)
+    HCaptcha {
+        /// Website URL
+        website_url: String,
+        /// Website key
+        website_key: String,
+        /// Proxy configuration
+        proxy: ProxyConfig,
+    },
+    /// FunCaptcha (Proxyless)
+    FunCaptchaProxyless {
+        /// Website URL
+        website_url: String,
+        /// Website public key
+        website_public_key: String,
+    },
+    /// FunCaptcha (with Proxy)
     FunCaptcha {
         /// Website URL
         website_url: String,
         /// Website public key
         website_public_key: String,
+        /// Proxy configuration
+        proxy: ProxyConfig,
     },
     /// Generic task with custom data
     Custom {
