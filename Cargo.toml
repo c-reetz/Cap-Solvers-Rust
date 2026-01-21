@@ -1,0 +1,21 @@
+[package]
+name = "cap_solvers"
+version = "0.1.0"
+edition = "2021"
+authors = ["c-reetz"]
+description = "A Rust library for interacting with captcha solving services"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/c-reetz/Cap-Solvers-Rust"
+keywords = ["captcha", "solver", "captcha-solver", "api"]
+categories = ["api-bindings", "web-programming"]
+
+[dependencies]
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+thiserror = "1.0"
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio-test = "0.4"
