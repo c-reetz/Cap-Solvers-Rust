@@ -3,6 +3,7 @@
 //! A Rust library for interacting with captcha solving services.
 //!
 //! This crate provides a unified interface for multiple captcha solving providers:
+//! - Anticaptcha
 //! - CapSolver
 //! - CapMonster
 //! - 2Captcha
@@ -38,5 +39,7 @@ pub mod providers;
 pub mod types;
 
 pub use error::{Error, Result};
-pub use providers::{capmonster::CapMonster, capsolver::CapSolver, twocaptcha::TwoCaptcha};
+pub use providers::{
+    anticaptcha::Anticaptcha, capmonster::CapMonster, capsolver::CapSolver, twocaptcha::TwoCaptcha,
+};
 pub use types::{Balance, CaptchaSolver, ProxyConfig, TaskResult, TaskStatus, TaskType};
