@@ -29,7 +29,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-cap_solvers = "0.1.0"
+cap_solvers = { git = "https://github.com/c-reetz/Cap-Solvers-Rust" }
 ```
 
 ## Usage
