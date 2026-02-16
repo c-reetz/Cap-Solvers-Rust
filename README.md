@@ -1,6 +1,6 @@
 # Cap-Solvers-Rust
 
-A Rust library for interacting with captcha solving services.
+A Rust library for interacting with captcha solving services. Uses native rust-tls, so OpenSSL issues aren't expected to happen on Windows.
 
 ## Features
 
