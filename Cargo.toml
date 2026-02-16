@@ -6,6 +6,8 @@ authors = ["c-reetz"]
 description = "A Rust library for interacting with captcha solving services"
 license = "MIT"
 repository = "https://github.com/c-reetz/Cap-Solvers-Rust"
+homepage = "https://github.com/c-reetz/Cap-Solvers-Rust"
+documentation = "https://docs.rs/cap_solvers"
 keywords = ["captcha", "solver", "captcha-solver", "api"]
 categories = ["api-bindings", "web-programming"]
 

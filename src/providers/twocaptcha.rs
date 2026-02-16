@@ -9,7 +9,33 @@ use std::collections::HashMap;
 
 const TWOCAPTCHA_API_URL: &str = "https://2captcha.com";
 
-/// 2Captcha client
+/// 2Captcha API client.
+///
+/// Provides access to the [2Captcha](https://2captcha.com/) captcha solving service.
+///
+/// # Examples
+///
+/// ```no_run
+/// use cap_solvers::{TwoCaptcha, CaptchaSolver, TaskType};
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let solver = TwoCaptcha::new("YOUR_API_KEY");
+///
+/// // Check balance
+/// let balance = solver.get_balance().await?;
+/// println!("Balance: ${}", balance.balance);
+///
+/// // Solve an hCaptcha
+/// let task_id = solver.create_task(TaskType::HCaptchaProxyless {
+///     website_url: "https://example.com".to_string(),
+///     website_key: "site-key-here".to_string(),
+/// }).await?;
+///
+/// let result = solver.poll_task_result(&task_id, 120, 5).await?;
+/// println!("Solution: {:?}", result.solution);
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone)]
 pub struct TwoCaptcha {
     api_key: String,
@@ -47,10 +73,18 @@ struct GetBalanceResponse {
 }
 
 impl TwoCaptcha {
-    /// Create a new 2Captcha client
+    /// Create a new 2Captcha client.
     ///
     /// # Arguments
     /// * `api_key` - Your 2Captcha API key
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cap_solvers::TwoCaptcha;
+    ///
+    /// let solver = TwoCaptcha::new("your-api-key-here");
+    /// ```
     pub fn new(api_key: impl Into<String>) -> Self {
         Self {
             api_key: api_key.into(),

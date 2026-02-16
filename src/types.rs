@@ -4,8 +4,21 @@ use crate::error::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Balance information
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Balance information returned from captcha solving services.
+///
+/// # Examples
+///
+/// ```no_run
+/// use cap_solvers::{CapSolver, CaptchaSolver};
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let solver = CapSolver::new("YOUR_API_KEY");
+/// let balance = solver.get_balance().await?;
+/// println!("Balance: ${}", balance.balance);
+/// # Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Balance {
     /// The balance amount
     pub balance: f64,
@@ -13,8 +26,17 @@ pub struct Balance {
     pub currency: Option<String>,
 }
 
-/// Task status
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Status of a captcha solving task.
+///
+/// # Examples
+///
+/// ```
+/// use cap_solvers::TaskStatus;
+///
+/// let status = TaskStatus::Processing;
+/// assert_eq!(status, TaskStatus::Processing);
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TaskStatus {
     /// Task is being processed
     Processing,
@@ -24,8 +46,28 @@ pub enum TaskStatus {
     Failed,
 }
 
-/// Task result
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Result of a captcha solving task.
+///
+/// Contains the task status, solution data (if ready), error message (if failed),
+/// and cost information.
+///
+/// # Examples
+///
+/// ```no_run
+/// use cap_solvers::{CapSolver, CaptchaSolver, TaskType};
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let solver = CapSolver::new("YOUR_API_KEY");
+/// let task_id = solver.create_task(TaskType::ImageToText {
+///     body: "base64_encoded_image".to_string(),
+/// }).await?;
+///
+/// let result = solver.get_task_result(&task_id).await?;
+/// println!("Task status: {:?}", result.status);
+/// # Ok(())
+/// # }
+/// ```
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TaskResult {
     /// Task ID
     pub task_id: String,
@@ -39,8 +81,25 @@ pub struct TaskResult {
     pub cost: Option<f64>,
 }
 
-/// Proxy configuration for captcha tasks
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Proxy configuration for captcha tasks that require proxy support.
+///
+/// Some captcha types require interaction through a proxy to simulate
+/// a real user browsing from a specific location.
+///
+/// # Examples
+///
+/// ```
+/// use cap_solvers::ProxyConfig;
+///
+/// let proxy = ProxyConfig {
+///     proxy_type: "http".to_string(),
+///     proxy_address: "proxy.example.com".to_string(),
+///     proxy_port: 8080,
+///     proxy_login: Some("username".to_string()),
+///     proxy_password: Some("password".to_string()),
+/// };
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ProxyConfig {
     /// Proxy type (e.g., "http", "https", "socks4", "socks5")
     pub proxy_type: String,
@@ -56,8 +115,29 @@ pub struct ProxyConfig {
     pub proxy_password: Option<String>,
 }
 
-/// Task types supported by captcha solvers
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Types of captcha tasks supported by the solving services.
+///
+/// Different captcha types require different parameters. Each variant
+/// contains the necessary information to solve that specific captcha type.
+///
+/// # Examples
+///
+/// ```
+/// use cap_solvers::TaskType;
+///
+/// // Simple image captcha
+/// let task = TaskType::ImageToText {
+///     body: "base64_encoded_image_data".to_string(),
+/// };
+///
+/// // ReCaptcha v2 without proxy
+/// let task = TaskType::ReCaptchaV2Proxyless {
+///     website_url: "https://example.com".to_string(),
+///     website_key: "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-".to_string(),
+///     is_invisible: Some(false),
+/// };
+/// ```
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TaskType {
     /// Image to text captcha
@@ -186,28 +266,96 @@ pub enum TaskType {
     },
 }
 
-/// Main trait for captcha solver implementations
+/// Main trait for captcha solver implementations.
+///
+/// All captcha solving providers implement this trait, providing a unified
+/// interface for different services.
+///
+/// # Examples
+///
+/// ```no_run
+/// use cap_solvers::{CapSolver, CaptchaSolver, TaskType};
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let solver = CapSolver::new("YOUR_API_KEY");
+///
+/// // Create and solve a task
+/// let task_id = solver.create_task(TaskType::ImageToText {
+///     body: "base64_encoded_image".to_string(),
+/// }).await?;
+///
+/// // Poll for the result
+/// let result = solver.poll_task_result(&task_id, 120, 5).await?;
+/// # Ok(())
+/// # }
+/// ```
 #[async_trait::async_trait]
 pub trait CaptchaSolver: Send + Sync {
-    /// Create a new captcha solving task
+    /// Create a new captcha solving task.
     ///
     /// # Arguments
     /// * `task` - The task type and parameters
     ///
     /// # Returns
-    /// The task ID
+    /// The task ID as a `String` that can be used to query the task result.
+    ///
+    /// # Errors
+    /// Returns an error if:
+    /// - The API key is invalid
+    /// - The account has insufficient balance
+    /// - The task parameters are invalid
+    /// - Network communication fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use cap_solvers::{CapSolver, CaptchaSolver, TaskType};
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let solver = CapSolver::new("YOUR_API_KEY");
+    /// let task_id = solver.create_task(TaskType::ImageToText {
+    ///     body: "base64_encoded_image".to_string(),
+    /// }).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
     async fn create_task(&self, task: TaskType) -> Result<String>;
 
-    /// Get the result of a task
+    /// Get the current result of a task.
     ///
     /// # Arguments
-    /// * `task_id` - The task ID returned by create_task
+    /// * `task_id` - The task ID returned by [`create_task`](CaptchaSolver::create_task)
     ///
     /// # Returns
-    /// The task result
+    /// The current task result, which may still be processing.
+    ///
+    /// # Errors
+    /// Returns an error if:
+    /// - The task ID is not found
+    /// - Network communication fails
+    /// - The API returns an error
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use cap_solvers::{CapSolver, CaptchaSolver, TaskStatus};
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let solver = CapSolver::new("YOUR_API_KEY");
+    /// # let task_id = "task-id";
+    /// let result = solver.get_task_result(task_id).await?;
+    /// match result.status {
+    ///     TaskStatus::Ready => println!("Task complete!"),
+    ///     TaskStatus::Processing => println!("Still processing..."),
+    ///     TaskStatus::Failed => println!("Task failed"),
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
     async fn get_task_result(&self, task_id: &str) -> Result<TaskResult>;
 
-    /// Poll for task result with timeout
+    /// Poll for task result with timeout.
+    ///
+    /// This is a convenience method that repeatedly calls [`get_task_result`](CaptchaSolver::get_task_result)
+    /// until the task is complete or the timeout is reached.
     ///
     /// # Arguments
     /// * `task_id` - The task ID
@@ -215,7 +363,26 @@ pub trait CaptchaSolver: Send + Sync {
     /// * `poll_interval_secs` - Time between polls in seconds
     ///
     /// # Returns
-    /// The task result when ready
+    /// The task result when ready or failed.
+    ///
+    /// # Errors
+    /// Returns an error if:
+    /// - The timeout is reached before the task completes ([`Error::TaskTimeout`](crate::Error::TaskTimeout))
+    /// - Any error from [`get_task_result`](CaptchaSolver::get_task_result) occurs
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use cap_solvers::{CapSolver, CaptchaSolver};
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let solver = CapSolver::new("YOUR_API_KEY");
+    /// # let task_id = "task-id";
+    /// // Wait up to 120 seconds, checking every 5 seconds
+    /// let result = solver.poll_task_result(task_id, 120, 5).await?;
+    /// println!("Solution: {:?}", result.solution);
+    /// # Ok(())
+    /// # }
+    /// ```
     async fn poll_task_result(
         &self,
         task_id: &str,
@@ -239,9 +406,26 @@ pub trait CaptchaSolver: Send + Sync {
         }
     }
 
-    /// Get account balance
+    /// Get account balance.
     ///
     /// # Returns
-    /// Balance information
+    /// Balance information including the current balance amount and currency.
+    ///
+    /// # Errors
+    /// Returns an error if:
+    /// - The API key is invalid
+    /// - Network communication fails
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use cap_solvers::{CapSolver, CaptchaSolver};
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let solver = CapSolver::new("YOUR_API_KEY");
+    /// let balance = solver.get_balance().await?;
+    /// println!("Current balance: ${}", balance.balance);
+    /// # Ok(())
+    /// # }
+    /// ```
     async fn get_balance(&self) -> Result<Balance>;
 }
