@@ -8,7 +8,34 @@ use serde::{Deserialize, Serialize};
 
 const CAPMONSTER_API_URL: &str = "https://api.capmonster.cloud";
 
-/// CapMonster client
+/// CapMonster API client.
+///
+/// Provides access to the [CapMonster Cloud](https://capmonster.cloud/) captcha solving service.
+///
+/// # Examples
+///
+/// ```no_run
+/// use cap_solvers::{CapMonster, CaptchaSolver, TaskType};
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let solver = CapMonster::new("YOUR_API_KEY");
+///
+/// // Check balance
+/// let balance = solver.get_balance().await?;
+/// println!("Balance: ${}", balance.balance);
+///
+/// // Solve a captcha
+/// let task_id = solver.create_task(TaskType::ReCaptchaV2Proxyless {
+///     website_url: "https://example.com".to_string(),
+///     website_key: "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-".to_string(),
+///     is_invisible: Some(false),
+/// }).await?;
+///
+/// let result = solver.poll_task_result(&task_id, 120, 5).await?;
+/// println!("Solution: {:?}", result.solution);
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone)]
 pub struct CapMonster {
     api_key: String,
@@ -67,10 +94,18 @@ struct GetBalanceResponse {
 }
 
 impl CapMonster {
-    /// Create a new CapMonster client
+    /// Create a new CapMonster client.
     ///
     /// # Arguments
     /// * `api_key` - Your CapMonster API key
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cap_solvers::CapMonster;
+    ///
+    /// let solver = CapMonster::new("your-api-key-here");
+    /// ```
     pub fn new(api_key: impl Into<String>) -> Self {
         Self {
             api_key: api_key.into(),

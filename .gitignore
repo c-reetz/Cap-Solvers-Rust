@@ -1,2 +1,5 @@
 /target
 Cargo.lock
+
+# Test artifacts
+test_*

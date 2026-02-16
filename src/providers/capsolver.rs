@@ -8,7 +8,32 @@ use serde::{Deserialize, Serialize};
 
 const CAPSOLVER_API_URL: &str = "https://api.capsolver.com";
 
-/// CapSolver client
+/// CapSolver API client.
+///
+/// Provides access to the [CapSolver](https://www.capsolver.com/) captcha solving service.
+///
+/// # Examples
+///
+/// ```no_run
+/// use cap_solvers::{CapSolver, CaptchaSolver, TaskType};
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let solver = CapSolver::new("YOUR_API_KEY");
+///
+/// // Check balance
+/// let balance = solver.get_balance().await?;
+/// println!("Balance: ${}", balance.balance);
+///
+/// // Solve a captcha
+/// let task_id = solver.create_task(TaskType::ImageToText {
+///     body: "base64_encoded_image".to_string(),
+/// }).await?;
+///
+/// let result = solver.poll_task_result(&task_id, 120, 5).await?;
+/// println!("Solution: {:?}", result.solution);
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone)]
 pub struct CapSolver {
     api_key: String,
@@ -66,10 +91,18 @@ struct GetBalanceResponse {
 }
 
 impl CapSolver {
-    /// Create a new CapSolver client
+    /// Create a new CapSolver client.
     ///
     /// # Arguments
     /// * `api_key` - Your CapSolver API key
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cap_solvers::CapSolver;
+    ///
+    /// let solver = CapSolver::new("your-api-key-here");
+    /// ```
     pub fn new(api_key: impl Into<String>) -> Self {
         Self {
             api_key: api_key.into(),

@@ -8,11 +8,36 @@ use serde::{Deserialize, Serialize};
 
 const ANTICAPTCHA_API_URL: &str = "https://api.anti-captcha.com";
 
-/// Anticaptcha client
+/// Anticaptcha API client.
+///
+/// Provides access to the [Anticaptcha](https://anti-captcha.com/) captcha solving service.
 ///
 /// Note: Anticaptcha uses integer task IDs (i64) internally, but the CaptchaSolver trait
 /// uses String for task IDs to maintain consistency across all providers. The implementation
 /// handles conversion between these types transparently.
+///
+/// # Examples
+///
+/// ```no_run
+/// use cap_solvers::{Anticaptcha, CaptchaSolver, TaskType};
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let solver = Anticaptcha::new("YOUR_API_KEY");
+///
+/// // Check balance
+/// let balance = solver.get_balance().await?;
+/// println!("Balance: ${}", balance.balance);
+///
+/// // Solve a captcha
+/// let task_id = solver.create_task(TaskType::ImageToText {
+///     body: "base64_encoded_image".to_string(),
+/// }).await?;
+///
+/// let result = solver.poll_task_result(&task_id, 120, 5).await?;
+/// println!("Solution: {:?}", result.solution);
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone)]
 pub struct Anticaptcha {
     api_key: String,
@@ -71,10 +96,18 @@ struct GetBalanceResponse {
 }
 
 impl Anticaptcha {
-    /// Create a new Anticaptcha client
+    /// Create a new Anticaptcha client.
     ///
     /// # Arguments
     /// * `api_key` - Your Anticaptcha API key
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use cap_solvers::Anticaptcha;
+    ///
+    /// let solver = Anticaptcha::new("your-api-key-here");
+    /// ```
     pub fn new(api_key: impl Into<String>) -> Self {
         Self {
             api_key: api_key.into(),

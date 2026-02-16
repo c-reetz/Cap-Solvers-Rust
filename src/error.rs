@@ -3,9 +3,48 @@
 use thiserror::Error;
 
 /// Result type for cap_solvers operations.
+///
+/// This is a convenience type alias for `Result<T, Error>` used throughout
+/// the crate to simplify error handling.
+///
+/// # Examples
+///
+/// ```
+/// use cap_solvers::{Result, Error};
+///
+/// fn example_function() -> Result<String> {
+///     Ok("success".to_string())
+/// }
+///
+/// fn example_with_error() -> Result<()> {
+///     Err(Error::InvalidApiKey)
+/// }
+/// ```
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Error types that can occur when using the cap_solvers library.
+///
+/// This enum represents all possible errors that can occur when interacting
+/// with captcha solving services. It implements `std::error::Error` and `Display`
+/// via the `thiserror` crate.
+///
+/// # Examples
+///
+/// ```
+/// use cap_solvers::Error;
+///
+/// // Errors can be created directly
+/// let error = Error::InvalidApiKey;
+/// assert_eq!(error.to_string(), "Invalid API key");
+///
+/// // Or they can be propagated using the ? operator
+/// fn validate_api_key(key: &str) -> Result<(), Error> {
+///     if key.is_empty() {
+///         return Err(Error::InvalidApiKey);
+///     }
+///     Ok(())
+/// }
+/// ```
 #[derive(Debug, Error)]
 pub enum Error {
     /// HTTP request error
