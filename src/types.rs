@@ -35,10 +35,16 @@ pub struct Balance {
 ///
 /// let status = TaskStatus::Processing;
 /// assert_eq!(status, TaskStatus::Processing);
+///
+/// // Default is Processing
+/// let default_status = TaskStatus::default();
+/// assert_eq!(default_status, TaskStatus::Processing);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
 pub enum TaskStatus {
     /// Task is being processed
+    #[default]
     Processing,
     /// Task is ready with a result
     Ready,
