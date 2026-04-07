@@ -5,6 +5,8 @@ use crate::types::{Balance, CaptchaSolver, TaskResult, TaskStatus, TaskType};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 const CAPSOLVER_API_URL: &str = "https://api.capsolver.com";
 
@@ -26,7 +28,10 @@ const CAPSOLVER_API_URL: &str = "https://api.capsolver.com";
 ///
 /// // Solve a captcha
 /// let task_id = solver.create_task(TaskType::ImageToText {
+///     website_url: None,
 ///     body: "base64_encoded_image".to_string(),
+///     module: None,
+///     images: None,
 /// }).await?;
 ///
 /// let result = solver.poll_task_result(&task_id, 120, 5).await?;
@@ -38,6 +43,7 @@ const CAPSOLVER_API_URL: &str = "https://api.capsolver.com";
 pub struct CapSolver {
     api_key: String,
     client: Client,
+    ready_task_results: Arc<Mutex<HashMap<String, TaskResult>>>,
 }
 
 #[derive(Serialize)]
@@ -53,6 +59,8 @@ struct CreateTaskResponse {
     error_id: i32,
     #[serde(rename = "errorDescription")]
     error_description: Option<String>,
+    status: Option<String>,
+    solution: Option<serde_json::Value>,
     #[serde(rename = "taskId")]
     task_id: Option<String>,
 }
@@ -107,16 +115,32 @@ impl CapSolver {
         Self {
             api_key: api_key.into(),
             client: Client::new(),
+            ready_task_results: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     fn task_to_json(&self, task: TaskType) -> Result<serde_json::Value> {
         let json = match task {
-            TaskType::ImageToText { body } => {
-                serde_json::json!({
+            TaskType::ImageToText {
+                website_url,
+                body,
+                module,
+                images,
+            } => {
+                let mut json = serde_json::json!({
                     "type": "ImageToTextTask",
                     "body": body,
-                })
+                });
+                if let Some(website_url) = website_url {
+                    json["websiteURL"] = serde_json::json!(website_url);
+                }
+                if let Some(module) = module {
+                    json["module"] = serde_json::json!(module);
+                }
+                if let Some(images) = images {
+                    json["images"] = serde_json::json!(images);
+                }
+                json
             }
             TaskType::ReCaptchaV2Proxyless {
                 website_url,
@@ -356,12 +380,46 @@ impl CaptchaSolver for CapSolver {
             ));
         }
 
-        response
+        let task_id = response
             .task_id
-            .ok_or_else(|| Error::Api("No task ID returned".to_string()))
+            .ok_or_else(|| Error::Api("No task ID returned".to_string()))?;
+
+        if response.status.as_deref() == Some("ready") {
+            let solution = if let Some(serde_json::Value::Object(map)) = response.solution {
+                Some(map.into_iter().collect())
+            } else {
+                None
+            };
+
+            self.ready_task_results
+                .lock()
+                .map_err(|_| Error::Api("Ready task result cache lock poisoned".to_string()))?
+                .insert(
+                    task_id.clone(),
+                    TaskResult {
+                        task_id: task_id.clone(),
+                        status: TaskStatus::Ready,
+                        solution,
+                        error: response.error_description.clone(),
+                        cost: None,
+                    },
+                );
+        }
+
+        Ok(task_id)
     }
 
     async fn get_task_result(&self, task_id: &str) -> Result<TaskResult> {
+        if let Some(result) = self
+            .ready_task_results
+            .lock()
+            .map_err(|_| Error::Api("Ready task result cache lock poisoned".to_string()))?
+            .get(task_id)
+            .cloned()
+        {
+            return Ok(result);
+        }
+
         let request = GetTaskResultRequest {
             client_key: self.api_key.clone(),
             task_id: task_id.to_string(),
@@ -450,10 +508,16 @@ mod tests {
         let solver = CapSolver::new("test_key");
 
         let task = TaskType::ImageToText {
+            website_url: Some("https://example.com".to_string()),
             body: "base64data".to_string(),
+            module: Some("common".to_string()),
+            images: Some(vec!["base64data-2".to_string()]),
         };
         let json = solver.task_to_json(task).unwrap();
         assert_eq!(json["type"], "ImageToTextTask");
         assert_eq!(json["body"], "base64data");
+        assert_eq!(json["websiteURL"], "https://example.com");
+        assert_eq!(json["module"], "common");
+        assert_eq!(json["images"][0], "base64data-2");
     }
 }

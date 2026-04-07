@@ -22,7 +22,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create an image-to-text task
     println!("\nCreating task...");
     let task = TaskType::ImageToText {
+        website_url: None,
         body: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==".to_string(),
+        module: None,
+        images: None,
     };
 
     let task_id = solver.create_task(task).await?;

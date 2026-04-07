@@ -30,7 +30,10 @@ const ANTICAPTCHA_API_URL: &str = "https://api.anti-captcha.com";
 ///
 /// // Solve a captcha
 /// let task_id = solver.create_task(TaskType::ImageToText {
+///     website_url: None,
 ///     body: "base64_encoded_image".to_string(),
+///     module: None,
+///     images: None,
 /// }).await?;
 ///
 /// let result = solver.poll_task_result(&task_id, 120, 5).await?;
@@ -117,7 +120,12 @@ impl Anticaptcha {
 
     fn task_to_json(&self, task: TaskType) -> Result<serde_json::Value> {
         let json = match task {
-            TaskType::ImageToText { body } => {
+            TaskType::ImageToText {
+                website_url: _,
+                body,
+                module: _,
+                images: _,
+            } => {
                 serde_json::json!({
                     "type": "ImageToTextTask",
                     "body": body,
@@ -468,7 +476,10 @@ mod tests {
         let solver = Anticaptcha::new("test_key");
 
         let task = TaskType::ImageToText {
+            website_url: None,
             body: "base64data".to_string(),
+            module: None,
+            images: None,
         };
         let json = solver.task_to_json(task).unwrap();
         assert_eq!(json["type"], "ImageToTextTask");

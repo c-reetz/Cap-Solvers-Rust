@@ -65,7 +65,10 @@ pub enum TaskStatus {
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let solver = CapSolver::new("YOUR_API_KEY");
 /// let task_id = solver.create_task(TaskType::ImageToText {
+///     website_url: None,
 ///     body: "base64_encoded_image".to_string(),
+///     module: None,
+///     images: None,
 /// }).await?;
 ///
 /// let result = solver.get_task_result(&task_id).await?;
@@ -133,7 +136,10 @@ pub struct ProxyConfig {
 ///
 /// // Simple image captcha
 /// let task = TaskType::ImageToText {
+///     website_url: None,
 ///     body: "base64_encoded_image_data".to_string(),
+///     module: None,
+///     images: None,
 /// };
 ///
 /// // ReCaptcha v2 without proxy
@@ -148,8 +154,17 @@ pub struct ProxyConfig {
 pub enum TaskType {
     /// Image to text captcha
     ImageToText {
+        /// Optional page source URL to improve accuracy
+        #[serde(skip_serializing_if = "Option::is_none")]
+        website_url: Option<String>,
         /// Base64 encoded image
         body: String,
+        /// Optional model/module name (for example `common` or `number`)
+        #[serde(skip_serializing_if = "Option::is_none")]
+        module: Option<String>,
+        /// Optional batch image payload used by some modules such as `number`
+        #[serde(skip_serializing_if = "Option::is_none")]
+        images: Option<Vec<String>>,
     },
     /// ReCaptcha v2 (Proxyless)
     ReCaptchaV2Proxyless {
@@ -287,7 +302,10 @@ pub enum TaskType {
 ///
 /// // Create and solve a task
 /// let task_id = solver.create_task(TaskType::ImageToText {
+///     website_url: None,
 ///     body: "base64_encoded_image".to_string(),
+///     module: None,
+///     images: None,
 /// }).await?;
 ///
 /// // Poll for the result
@@ -319,7 +337,10 @@ pub trait CaptchaSolver: Send + Sync {
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let solver = CapSolver::new("YOUR_API_KEY");
     /// let task_id = solver.create_task(TaskType::ImageToText {
+    ///     website_url: None,
     ///     body: "base64_encoded_image".to_string(),
+    ///     module: None,
+    ///     images: None,
     /// }).await?;
     /// # Ok(())
     /// # }

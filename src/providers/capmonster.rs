@@ -115,7 +115,12 @@ impl CapMonster {
 
     fn task_to_json(&self, task: TaskType) -> Result<serde_json::Value> {
         let json = match task {
-            TaskType::ImageToText { body } => {
+            TaskType::ImageToText {
+                website_url: _,
+                body,
+                module: _,
+                images: _,
+            } => {
                 serde_json::json!({
                     "type": "ImageToTextTask",
                     "body": body,
