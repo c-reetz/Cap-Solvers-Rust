@@ -94,7 +94,12 @@ impl TwoCaptcha {
 
     fn task_to_params(&self, task: TaskType) -> Result<(String, HashMap<String, String>)> {
         let (method, params) = match task {
-            TaskType::ImageToText { body } => {
+            TaskType::ImageToText {
+                website_url: _,
+                body,
+                module: _,
+                images: _,
+            } => {
                 let mut params = HashMap::new();
                 params.insert("body".to_string(), body);
                 ("base64".to_string(), params)

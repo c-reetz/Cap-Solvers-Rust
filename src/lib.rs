@@ -48,7 +48,10 @@
 //!     
 //!     // Submit a captcha task
 //!     let task_id = solver.create_task(TaskType::ImageToText {
+//!         website_url: None,
 //!         body: "base64_encoded_image".to_string(),
+//!         module: None,
+//!         images: None,
 //!     }).await?;
 //!     
 //!     // Poll for the result (timeout: 120s, interval: 5s)
@@ -124,7 +127,10 @@
 //! let solver = CapSolver::new("YOUR_API_KEY");
 //!
 //! match solver.create_task(TaskType::ImageToText {
+//!     website_url: None,
 //!     body: "image_data".to_string(),
+//!     module: None,
+//!     images: None,
 //! }).await {
 //!     Ok(task_id) => println!("Task created: {}", task_id),
 //!     Err(Error::InvalidApiKey) => eprintln!("Invalid API key"),
