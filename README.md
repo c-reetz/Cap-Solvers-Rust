@@ -222,5 +222,3 @@ CAPSOLVER_API_KEY=your_key cargo run --example enterprise_and_proxy_example
 
 ## License
 - MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
